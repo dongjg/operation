@@ -1,0 +1,71 @@
+下面以制作nginx的RPM包为例
+  首先打RPM包前需要源码包、rpm-build工具和spec文件（打包脚本）
+
+一、步骤
+    1、安装rpm-build软件
+        #yum -y install rpm-build
+      
+    2、生成rpmbuild目录结构
+        #rpmbuild -ba nginx.spec   //第一次生成会报错，系统原没有文件或目录
+        #ls ./rpmbuild             //在当前目录下会自动生成目录结构
+          BUILD   BUILDROOT   RPMS    SOURCES   SPECS   SRPMS
+      
+          RPMS 存放rpm包
+          SOURCES 存放源码包
+          SPECS 配置文件
+      
+    3、准备工作，将源码包复制到SOURCES目录
+        #cp nginx-1.12.2.tar.gz /root/rpmbuild/SOURCES/
+        
+    4、创建修改SPEC配置文件
+        #vim /root/rpmbuild/SPECS/nginx.spec         //配置文件必须以.spec结尾
+            Name:nginx                  //必须和源码包名一致
+            Version:1.12.2              //版本号
+            Release:1                   //第几次打nginx的rpm包
+            Summary: Nginx is a web server   //简要介绍作用
+            
+            License:GPL                 //GPL国际化标准，简单说可复制、可修改、可共享
+            URL:www.nginx.com
+            Source0:nginx-1.12.2.tar.gz //必须和源码包名字保持一致，否则脚本无法正常运行
+            
+            BuildRepuires:gcc pcre-devel zlib-devel openssl-devel              //依赖包，但不解决依赖关系
+            Requires:                   //依赖包，但不解决依赖关系
+            
+            %description                //详细描述
+            nginx is an HTTP and reverse proxy server.
+            
+            %post                       //安装后脚本，在其下可写shell脚本,非必要操作，可在安装nginx后创建
+            useradd -s /sbin/nologin nginx
+            
+            %prep                       
+            %setup -q                   //自动解压源码包，并cd进入目录
+            
+            ./configure                 //指定安装目录/功能模块等模块，例如：可加 --with-http_ssl_module模块
+            make %{%_smp_mflags}
+            %install
+            make install DESTDIR==%{buildroot}
+            
+            cp /root/rpmbulid/SPECS/nginx.sh %{buildroot}/usr/local/nginx/          //cp非必须操作，这是将脚本拷贝到安装目录，必须提前准备
+            
+            %file
+            %doc
+            /usr/local/nginx/*              //指定对哪些文件和目录进行打包
+            
+            %changelog
+    5、 安装依赖包
+        #yum -y install gcc pcre-devel zlib-devel openssl-devel
+    6、rpmbuild创建RPM软件包
+        #rpmbuild -ba /root/rpmbuild/SPECS/nginx.spec
+        #ls /root/rpmbuild/RPMS/x86_64/nginx-1.12.2-10.x86_64.rpm
+        
+    7、安装与卸载
+        #rpm -ivh nginx-1.12.2-10.x86_64.rpm
+        #rpm -qa | grep nginx
+        #/usr/local/nginx/sbin/nginx          //启动nginx
+        
+        #ln -s /usr/local/nginx/sbin/nginx /sbin/     //创建软连接，此后只需nginx就可启动
+        #nginx                    //启动
+        #nginx -s reload          //重新加载
+        #nginx -s stop            //停止
+        #nginx -V                 //查看版本号
+        

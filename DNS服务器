@@ -1,0 +1,34 @@
+一、首先了解客户端解析域名的优先级：
+    1）/etc/hosts
+    2)/etc/resolv.conf
+    3)交由本机127.0.0.1处理
+    4）以上都不能解析，则不可达
+ 
+二、构建DNS服务器基本过程
+    1、安装bind、bind-chroot包
+    2、修改配置文件/etc/named.conf
+    3、修改地址库文件/var/named/
+    4、启动named服务
+    
+三、步骤
+    1、安装bind、bind-chroot包
+        #yum -y install bind bind-chroot
+    2、修改主配置文件/etc/named.conf
+        #vim /etc/named.conf
+        
+        options{
+          directory "/var/named";         //地址库默认存放位置
+        };
+        zone "tedu.cn" {                  //定义正向DNS区域
+            type master;                  //主区域
+            file "tedu.cn.zone";          //自定义地址库文件名
+        };
+    3、建立地址库文件/var/named/tedu.cn.zone
+        #vim /var/named/tedu.cn.zone
+            @         NS          svr7.tedu.cn.         //本地DNS服务器的FQDN
+            svr7      A           192.168.4.7           //为NS主机提供A记录
+            pc207     A           192.168.4.207         //其他正向解析地址
+            wwww      A           192.168.4.100
+    4、启动named服务
+        #systemctl restart named
+        #systemctl enable named

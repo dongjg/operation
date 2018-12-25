@@ -8,4 +8,33 @@
   网络拥塞，提高网络响应速度。客户邻近获取所需内容，需DNS服务器的分离解析，即指根据不同的客户端提供不同的域名解
   析记录。也就是不同客户请求访问相同的域名时，能解析出不同的IP地址，实现负载均衡。
   
-二、
+二、部署Varnish缓存服务器
+    1、安装依赖包
+        #yum -y install gcc readline-devel ncurses-devel pcre-devel
+        #yum -y install python-docutils
+    2、创建不可登陆用户
+        #useradd -s /sbin/nologin varnish
+    3、解压压缩包
+        #tar -xf varnish-5.2.1.tar.gz
+    4、编译安装
+        #cd varnish-5.2.1
+        #./configure
+        #make && make install
+    5、复制配置文件
+        #cp etc/example.vcl  /usr/local/etc/default.vcl
+        #vim /usr/local/etc/default.vcl
+            backend default {
+                .host = "192.168.2.100";
+                .port = "80";
+            }
+    6、启动服务
+        #varnish -f /usr/local/etc/default.vcl
+            //varnish -s malloc,200M        定义varnish使用内存作为缓存，空间为200M
+            //varnish -s file,/var/lib/varnish.bin,1G       定义varnish使用硬盘作为缓存，空间为1G
+    7、客户端测试
+        #firefox http://192.168.4.5
+    8、待续
+    9、
+    10、
+            
+        

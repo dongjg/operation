@@ -42,9 +42,100 @@ VPN：Virtual Private Network(虚拟专用网络)
  ##############################################################################
         ****同样的在远端服务器上也需要上述相同的配置，但是ip地址就是改为相对的！！！
         ****使用VPN时检查防火墙状态！！！
-二、
-    7、
-    8
-    9
-    10
-    
+二、创建PPTP VPN
+    PPTP是支持用户身份验证的隧道连接,最主要的是支持windows系统！
+    以下是在墙外服务器操作：
+    1、安装软件包
+        #yum -y install pptpd
+        #rpm -qc pptpd          //查看pptp的配置文件
+            /etc/ppp/options.pptpd      //选项文件
+            /etc/pptpd.conf             //主配置文件
+            /etc/sysconfig/pptpd        //
+    2、修改配置文件
+        #vim /etc/pptpd.conf
+            ....
+            localip 201.1.2.1           //本地服务器ip
+            remoteip 192.168.1.1-50     //允许分配给客户端的ip池
+        #vim /etc/ppp/options.pptpd
+            ....
+            require-mppe-128            //加密方式
+            ms-dns 8.8.8.8              //DNS服务器
+        #vim /etc/ppp/chap-secrets      //用户验证的文件
+            harry       *         123         *
+          //用户名     服务器ip     密码      客户端ip
+    4、开启远端服务器的路由转发功能
+        #echo 1 > /proc/sys/net/ipv4/ip_forward     //默认关闭0
+    5、检查防火墙、启动服务
+        #systemctl restart pptpd
+        #systemctl enable pptpd
+    6、翻墙必备杀器
+        #iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -j SNAT --to-source 201.1.2.1
+   ###########################################################
+   本地pc端操作：
+    1.网络->属性->设置新的连接或网络->连接到工作区->创建新的连接->使用我的Internet连接（VPN）->我将稍后设置Internet连接->
+        Internet地址：远端服务器地址
+        目标名称：（任意）
+        完成！
+
+三、创建L2TP+IPSec VPN
+    其中L2TP和PPTP搭建方式相同，配置文件修改相同
+    1、部署XL2TP服务
+        #yum -y install xl2tpd
+        #rpm -qc xl2tpd
+             /etc/ppp/chap-secrets.sample
+             /etc/ppp/options.xl2tpd
+             /etc/xl2tpd/l2tp-secrets
+             /etc/xl2tpd/xl2tpd.conf
+    2、部署IPSec服务
+        1)安装软件包
+            #yum -y install libreswan
+        2）新建IPSec密钥验证配置文件
+            #cat /etc/ipsec.conf | tail -1
+                include /etc/ipsec.d/*.conf         //加载该目录下的所有以.conf结尾的配置文件
+        3）vim /etc/ipsec.d/myipsec.conf
+        ########################################################################################
+        以下为配置文件配置：
+                conn IDC-PSK-NAT
+                rightsubnet=vhost:%priv                       //允许建立的VPN虚拟网络
+                also=IDC-PSK-noNAT
+                conn IDC-PSK-noNAT
+                authby=secret                                 //加密认证
+                ike=3des-sha1;modp1024                        //加密算法
+                phase2alg=aes256-sha1;modp2048                //算法
+                pfs=no
+                auto=add
+                keyingtries=3
+                rekey=no
+                ikelifetime=8h
+                keylife=3h
+                type=transport
+                left=201.1.2.1                                 //服务器本机的外网IP
+                leftprotoport=17/1701
+                right=%any                                     //允许任何客户端连接
+                rightprotoport=17/%any
+###########################################################################################
+        4）创建IPSec预定义共享密钥
+             #cat /etc/ipsec.secrets | tail -1                 //仅查看，不要修改该文件
+                    include /etc/ipsec.d/*.secrets
+             #vim /etc/ipsec.d/mypass.secrets
+                201.1.2.10          %any:         PSK     "randpass"
+              //VPN服务器ip   可以访问的客户端     预共享密钥   预共享密钥
+        6）启动服务
+            # systemctl start ipsec
+            # systemctl start xl2tpd
+        7）设置路由转发和防火墙
+            # echo "1" > /proc/sys/net/ipv4/ip_forward
+            # firewall-cmd --set-default-zone=trusted
+        8）翻墙必备
+            #iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -j SNAT --to-source 201.1.2.1
+  ####################################################################################################
+  客户端配置
+    1、生成VPN连接和PPTP相同
+    2、设置Windows注册表（不修改注册表，连接VPN默认会报789错误），具体操作如下：
+        1）单击"开始"，单击"运行"，键入"regedit"，然后单击"确定"
+        2）找到下面的注册表子项，然后单击它：
+                HKEY_LOCAL_MACHINE\ System\CurrentControlSet\Services\Rasman\Parameters
+        3）在"编辑"菜单上，单击"新建"->"DWORD值"
+        4）在"名称"框中，键入"ProhibitIpSec"
+        5）在"数值数据"框中，键入"1"，然后单击"确定"
+        6）退出注册表编辑器，然后重新启动计算机

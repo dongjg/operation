@@ -1,0 +1,10 @@
+VPN：Virtual Private Network(虚拟专用网络)
+    -在公网上建立私有网络（相当于局域网），进行将加密通信
+    -可以用于集团公司和各子公司建立连接
+    -也可用于翻墙
+    
+目前主流的VPN技术
+    GRE:点对点的隧道通信，仅适用用Linux系统，Linux内核自带模块ip_gre。通常用于机房服务器间通信
+    PPTP：可用与windows系统，可以使远程用户通过拨号访问网络
+    L2TP+IPSec
+    SSL

@@ -33,8 +33,13 @@
             //varnish -s file,/var/lib/varnish.bin,1G       定义varnish使用硬盘作为缓存，空间为1G
     7、客户端测试
         #firefox http://192.168.4.5
-    8、待续
-    9、
-    10、
+        
+    8、查看日志
+        #varnishlog             //varnish日志
+        #varnishncsa            //varnish访问日志
+    9、在后台web服务器更新页面后，varnish缓存服务器不会立刻更新新的页面（默认也会更新但不会是实时的），需要手动更新
+       缓存数据
+        #varnishadm
+        varnish>ban req.url ~ .*            //支持正则表达式
             
         

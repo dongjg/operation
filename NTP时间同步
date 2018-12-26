@@ -1,0 +1,33 @@
+搭建NTP时间服务器
+  采用分层设计，Stratum层的总数限制在15以内
+部署NTP服务
+一、部署服务器NTP服务
+  1、安装软件包
+      #yum -y install chrony
+      #rpm -qc chrony           //查看配置文件列表
+  2、修改配置文件
+      #vim /etc/chrony.conf
+          server ntp1.aliyun.com iburst     //server客户端指向上层NTP服务器
+          allow 192.168.1.0/24              //允许哪个ip访问NTP
+          deny 192.168.2.0/24               //拒绝哪个ip访问NTP
+          local stratum 10                  //设置NTP服务器的层数
+  3、启动NTP服务
+      #systemctl restart chronyd
+      #systemctl enable chronyd
+  4、设置防火墙（本机默认关闭）
+      #firewall-cmd --set-default-zone=trusted
+二、部署客户端NTP服务
+  1、安装软件包
+      #yum -y install chrony
+      #rpm -qc chrony           //查看配置文件列表
+  2、修改配置文件
+      #vim /etc/chrony.conf
+          server 192.168.4.1 iburst         //客户端指向服务器NTP 
+  3、启动NTP服务
+      #systemctl restart chronyd
+      #systemctl enable chronyd
+  4、设置防火墙（本机默认关闭）
+      #firewall-cmd --set-default-zone=trusted
+  5、验证
+      #date -s "12:00"        //修改完时间再重启chronyd
+      #date

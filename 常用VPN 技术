@@ -5,11 +5,11 @@ VPN：Virtual Private Network(虚拟专用网络)
     
 目前主流的VPN技术
     GRE:点对点的隧道通信，仅适用用Linux系统，Linux内核自带模块ip_gre。通常用于机房服务器间通信
-    PPTP：可用与windows系统，可以使远程用户通过拨号访问网络，远程服务器可允许多个客户端连接VPN。
+    PPTP：可用与windows系统，可以使远程用户通过拨号访问网络，远程服务器可允许多个客户端连接VPN。只能对用户信息加密，但是隧道传输信息不是加密的。
     L2TP+IPSec
     SSL
 
-在使用VPN时，需要关闭防火墙
+在使用VPN时，需要关闭防火墙；翻墙时必须确保在墙外有台服务器，给这台服务器安装VPN，且有墙外的公网ip
 
 一、配置GRE
     1、启用GRE模块，客户端和服务器都需操作
@@ -20,7 +20,8 @@ VPN：Virtual Private Network(虚拟专用网络)
     3、查看模块信息
         #modinfo ip_gre
         查看模块信息可以知道所有模块都位于：/lib/modules/3.10.0-693.el7.x86_64/kernel
-    4、
+    4、创建隧道
+        
     5
     6
     7

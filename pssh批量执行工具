@@ -1,10 +1,48 @@
-1、pssh介绍
+pssh介绍
   pssh是以python写的可以并发在多台机器上批量执行命令的工具.可以批量拷贝数据、下载数据、批量多并发远程其他主机、批量多并发杀死其他主机上的程序。
-
-2、pssh的使用
-  在使用pssh之前，必须要保证管理主机和本地主机进行过密钥的认证，或者是在进行批量时，没有做过密钥认证，但是必须保证被管理的多台主机的密码相同。
+  在使用pssh之前，尽量保证管理主机和本地主机进行过密钥的认证，被管理的多台主机的密码相同。
   
-  for i in 4.10 2.100 2.200
-  do
-      ssh-copy-id 192.168.$i
-  done
+一、软件安装
+  1、安装软件包
+    #yum -y install pssh
+  2、创建主机列表
+    vim /root/host.txt
+      root@192.168.2.100
+      192.168.2.200
+      192.168.4.10
+  3、pssh的语法格式
+    pssh提供并发远程连接时的一些参数：
+      -A  使用密码远程其他主机（默认使用密钥）
+      -i  将远程主机的输出显示在屏幕上
+      -H  设置需要连接的主机
+      -h  设置主机列表文件
+      -p  设置并发数量
+      -t  设置超时时间
+      -o dir  设置标准输出信息保存的目录
+      -e dir  设置错误输出信息保存的目录
+      -x  传递参数给ssh
+二、pssh的实例说明
+  1、使用密码远程多台主机，输出结果显示在屏幕上
+      #pssh -A -i -H '192.168.2.100 192.168.2.200 192.168.4.10' -x '-o StrictHostKeyChecking=no' echo 'hello world'
+          // -o StrictHostKeyChecking=no 参数是第一次ssh时不提示验证消息
+  2、生成密钥，批量发送到其他主机
+      #ssh-keygen       //也可加参数，非交互式生成密钥 -N ‘’ -f /root/.ssh/id_rsa
+      #for i in 4.10 2.100 2.200
+      >do
+      >ssh-copy-id 192.168.$i       //copy公钥到其他主机
+      >done
+  3、使用密钥远程其他主机
+      #pssh -i -h host.txt echo 'hellow world'
+  4、使用密钥远程其他主机，将标准输出信息写入到/tmp目录
+      #pssh -h host.txt -i -o /tmp echo "hello world"
+      
+  5、批量、多并发拷贝数据到其他主机
+      #pscp.pssh -h host.txt /etc/hosts /tmp
+  6、递归拷贝到远程主机
+      #pscp.pssh -h host.txt -r /lib /mnt
+  7、批量、多并发从其他主机下载数据，存放到对应ip下的pass文件
+      #pslurp -h host.txt /etc/passwd /pass      //其中‘/pass’中的‘/’指在当前目录下创建以远程主机名命名的子目录，并且重命名为pass
+          //同样可以指定拷贝路径  ‘-L /tmp’  即：#pslurp -h host.txt -L /tmp /etc/passwd /pass
+  8、批量、多并发杀死其他主机的进程
+      #pnuke -h host.txt 进程名          //pnuke是杀死和‘进程名’相关的一系列进程
+

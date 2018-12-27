@@ -1,2 +1,38 @@
   如果Linux主机是全天24小时，全年无休的服务器，我们只要选择crond来管理计划任务即可。如果你的Linux主机或服务器不是24小时不间断开机，
-那么你就的考虑如何执行计划任务？
+那么你就的考虑如何执行计划任务？举个例子，如果你每天晚上都要关机，但是你设置的计划任务在凌晨2点执行，等到第二天就会有一堆计划任务未执
+行。这就需要anacron这个工具了。
+  
+  什么是anacron？
+    目的在于处理非24小时运行的Linux系统的crontab的执行。anacron以天为单位或者在开机后立刻执行anacron操作，它会检测关机期间未执行
+  的crontab，并将这些任务执行一边，然后anacron就会自动停止。
+  
+    但是这样我们又会面临一个问题，anacron怎么知道我们的系统什么停机？这就要使anacron读取时间记录文件，anacron就会自动分析现在时间
+  和时间记录文件的区别，找到在哪一时刻未执行crontab。此时anacron就会执行未执行额crontab。由此我们可以看出anacron也是执行的crontab
+  中的计划任务。
+    下面看下anacron配置文件：
+     #vim /etc/anacrontab
+  ###############################################################################################
+        SHELL=/bin/sh
+        PATH=/sbin:/bin:/usr/sbin:/usr/bin
+        MAILTO=root
+        # the maximal random delay added to the base delay of the jobs
+        RANDOM_DELAY=45
+        # the jobs will be started during the following hours only
+        START_HOURS_RANGE=3-22
+
+        #period in days   delay in minutes   job-identifier   command
+        1       5       cron.daily              nice run-parts /etc/cron.daily
+        7       25      cron.weekly             nice run-parts /etc/cron.weekly
+        @monthly 45     cron.monthly            nice run-parts /etc/cron.monthly
+  ################################################################################################
+    时间戳文件：
+      /etc/cron.daily
+      /etc/cron.weekly
+      /etc/cron.monthly
+    开机anacron运行读取时间戳，执行顺序
+      1、首先/etc/anacrontab会分析到cron.daily这个目录为1天；
+      2、从/var/spool/anacron/cron.daily中取出anacron最后一次执行的时间戳；
+      3、用取出的时间戳和现在比较，若差异1天以上，就会准备执行命令；
+      4、若执行命令，则会根据/etc/anacrontab中设置将延迟5分钟；
+      5、5分钟后开始执行“run-parts /etc/cron.daily”这串命令；
+      6、执行完毕后，anacron程序结束。

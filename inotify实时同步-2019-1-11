@@ -1,0 +1,29 @@
+1、Linux内核的inotify机制
+    -提供事件响应式的文件系统通知机制
+    -安装inotify-tools控制工具可调用此机制实现监控
+    
+2、用法
+      inotifywait [选项] 目标文件
+        选项：
+             -m   持续监控（捕获一个事件后不退出）
+             -r   递归监控、包括子目录及文件
+             -q   减少屏幕输出信息
+             -e   指定监视的modify、move、create、delete、attrib等事件类别
+             
+      持续跟踪指定文件夹的变化：
+          #inotifywait -mrq modify,create,delete /opt
+      
+3、配置Web镜像同步
+    -主要基于inotifywait监控技术实现实时触发操作
+    
+    脚本文件:/root/isync.sh
+    
+        #/bin/bash
+        from_dir="/var/www/html"
+        rsync_cmd="rsync -az --delete $from_dir root@192.168.4.207:/var/www/html"
+        while inotifywait -rqq -e modify,move,create,delete,attrib $from_dir
+        do
+          $rsync_cmd
+        done &
+        
+     #chmod +x /root/isync.sh
